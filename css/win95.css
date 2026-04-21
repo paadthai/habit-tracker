@@ -1,0 +1,342 @@
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --win-bg: #c0c0c0;
+  --win-dark: #808080;
+  --win-darker: #404040;
+  --win-white: #ffffff;
+  --win-black: #000000;
+  --win-title: #000080;
+  --win-title-end: #1084d0;
+  --win-text: #000000;
+  --border-raised: inset -1px -1px var(--win-dark), inset 1px 1px var(--win-white), inset -2px -2px var(--win-darker), inset 2px 2px var(--win-bg);
+  --border-sunken: inset 1px 1px var(--win-dark), inset -1px -1px var(--win-white), inset 2px 2px var(--win-darker), inset -2px -2px var(--win-bg);
+  --border-field: inset 1px 1px var(--win-darker), inset -1px -1px var(--win-white);
+}
+
+body {
+  background: var(--win-bg);
+  font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif;
+  font-size: 11px;
+  color: var(--win-text);
+  min-height: 100vh;
+  /* iOS 노치/홈바 safe area 대응 */
+  padding: max(8px, env(safe-area-inset-top)) max(8px, env(safe-area-inset-right)) max(8px, env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left));
+}
+
+/* ── Window ── */
+.window {
+  background: var(--win-bg);
+  box-shadow: var(--border-raised);
+  margin-bottom: 8px;
+}
+
+.window-titlebar {
+  background: linear-gradient(to right, var(--win-title), var(--win-title-end));
+  color: white;
+  padding: 3px 4px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  user-select: none;
+}
+
+.window-titlebar .title {
+  font-family: 'Press Start 2P', monospace;
+  font-size: 8px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.window-controls {
+  display: flex;
+  gap: 2px;
+}
+
+.window-btn {
+  width: 16px;
+  height: 14px;
+  background: var(--win-bg);
+  border: none;
+  box-shadow: var(--border-raised);
+  cursor: pointer;
+  font-size: 9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--win-black);
+  font-weight: bold;
+  line-height: 1;
+}
+
+.window-btn:active {
+  box-shadow: var(--border-sunken);
+}
+
+.window-content {
+  padding: 8px;
+}
+
+/* ── Buttons ── */
+.btn {
+  background: var(--win-bg);
+  border: none;
+  box-shadow: var(--border-raised);
+  padding: 4px 12px;
+  font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif;
+  font-size: 11px;
+  cursor: pointer;
+  min-width: 75px;
+  height: 23px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn:active,
+.btn.pressed {
+  box-shadow: var(--border-sunken);
+  padding-top: 5px;
+  padding-left: 13px;
+}
+
+.btn:focus {
+  outline: 1px dotted var(--win-black);
+  outline-offset: -4px;
+}
+
+.btn-small {
+  min-width: 20px;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  font-size: 10px;
+  font-weight: bold;
+}
+
+/* ── Input / Select ── */
+input[type="text"],
+input[type="number"],
+select {
+  background: white;
+  border: none;
+  box-shadow: var(--border-field);
+  padding: 2px 4px;
+  font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif;
+  font-size: 11px;
+  height: 21px;
+  color: var(--win-black);
+}
+
+input[type="text"]:focus,
+input[type="number"]:focus,
+select:focus {
+  outline: none;
+  /* Win95 doesn't show a visible focus ring on fields */
+}
+
+/* ── Checkbox (custom win95 style) ── */
+.habit-check {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 36px;
+  height: 36px;
+  background: white;
+  box-shadow: var(--border-field);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  flex-shrink: 0;
+  /* 44px 터치 영역 확보 (iOS HIG) */
+  touch-action: manipulation;
+}
+
+.habit-check:checked::after {
+  content: '✔';
+  font-size: 18px;
+  color: var(--win-black);
+  position: absolute;
+}
+
+.habit-check:active {
+  background: var(--win-bg);
+}
+
+/* ── Habit Table ── */
+#habit-table-container {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+#habit-table {
+  border-collapse: collapse;
+  min-width: 100%;
+  table-layout: fixed;
+}
+
+#habit-table th {
+  background: var(--win-bg);
+  box-shadow: var(--border-raised);
+  padding: 4px 6px;
+  text-align: center;
+  font-size: 10px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+#habit-table th.col-name { width: 140px; text-align: left; position: sticky; left: 0; z-index: 2; }
+#habit-table th.col-target { width: 120px; }
+#habit-table th.col-day { width: 44px; }
+#habit-table th.col-delete { width: 32px; }
+
+#habit-table td {
+  padding: 3px 4px;
+  text-align: center;
+  border-bottom: 1px solid var(--win-dark);
+  vertical-align: middle;
+}
+
+#habit-table td.td-name {
+  text-align: left;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  background: var(--win-bg);
+}
+
+#habit-table tr:nth-child(even) td {
+  background: #d4d0c8;
+}
+
+#habit-table tr:nth-child(even) td.td-name {
+  background: #d4d0c8;
+}
+
+#habit-table tr:hover td {
+  background: #000080;
+  color: white;
+}
+
+#habit-table tr:hover td.td-name {
+  background: #000080;
+  color: white;
+}
+
+#habit-table tr:hover .habit-check {
+  outline: 1px solid white;
+}
+
+/* 체크박스 td는 패딩 최소화해서 터치 영역 확보 */
+#habit-table td:has(.habit-check) {
+  padding: 2px;
+}
+
+.day-header-label {
+  display: block;
+  font-size: 8px;
+  color: var(--win-darker);
+}
+
+/* 모바일 목표 뱃지 — 데스크탑에서 숨기고 모바일에서 표시 */
+.mobile-target-badge {
+  display: none;
+  font-size: 9px;
+  color: var(--win-darker);
+  margin-top: 2px;
+  white-space: nowrap;
+}
+
+/* ── Add row ── */
+#add-habit-row td {
+  background: var(--win-bg) !important;
+  border-bottom: none;
+}
+
+/* ── Status bar ── */
+.statusbar {
+  background: var(--win-bg);
+  box-shadow: var(--border-sunken);
+  padding: 2px 6px;
+  font-size: 10px;
+  display: flex;
+  gap: 8px;
+}
+
+.statusbar-item {
+  box-shadow: inset 1px 1px var(--win-dark), inset -1px -1px var(--win-white);
+  padding: 1px 6px;
+}
+
+/* ── Progress bar ── */
+.progress-wrap {
+  box-shadow: var(--border-sunken);
+  background: white;
+  height: 16px;
+  width: 120px;
+  display: inline-block;
+  overflow: hidden;
+  vertical-align: middle;
+}
+
+.progress-fill {
+  height: 100%;
+  background: var(--win-title);
+  transition: width 0.3s;
+}
+
+/* ── Scrollbar (webkit) ── */
+::-webkit-scrollbar { width: 16px; height: 16px; }
+::-webkit-scrollbar-track { background: var(--win-bg); box-shadow: var(--border-sunken); }
+::-webkit-scrollbar-thumb { background: var(--win-bg); box-shadow: var(--border-raised); }
+::-webkit-scrollbar-button { background: var(--win-bg); box-shadow: var(--border-raised); display: block; height: 16px; }
+
+/* ── Mobile ── */
+@media (max-width: 600px) {
+  body { padding: 4px; font-size: 11px; }
+
+  /* 목표/기준 열 숨기고 이름 셀 뱃지로 표시 */
+  #habit-table th.col-target,
+  #habit-table td.td-target { display: none; }
+  .mobile-target-badge { display: block; }
+
+  #habit-table th.col-name { width: 90px; }
+  #habit-table th.col-day { width: 40px; }
+  #habit-table th.col-delete { width: 28px; }
+
+  /* 체크박스는 그대로 크게 유지 */
+  .habit-check { width: 36px; height: 36px; }
+
+  /* 버튼 터치 영역 */
+  .btn { height: 36px; font-size: 12px; }
+  .btn-small { width: 28px; height: 28px; font-size: 13px; }
+
+  /* 상태바 가로 스크롤 방지 */
+  .statusbar { flex-wrap: wrap; gap: 4px; }
+
+  /* 윈도우 타이틀바 버튼 크게 */
+  .window-btn { width: 22px; height: 22px; }
+
+  /* + 습관 추가 버튼 전체 너비 */
+  #btn-add-habit { width: 100%; }
+
+  /* 스크롤바 모바일에서 숨기기 */
+  #habit-table-container::-webkit-scrollbar { height: 4px; }
+}
+
+/* 터치 기기에서 hover 효과 제거 (ghost hover 방지) */
+@media (hover: none) {
+  #habit-table tr:hover td { background: unset; color: unset; }
+  #habit-table tr:nth-child(even):hover td { background: #d4d0c8; }
+  #habit-table tr:hover td.td-name { background: var(--win-bg); }
+  #habit-table tr:nth-child(even):hover td.td-name { background: #d4d0c8; }
+}

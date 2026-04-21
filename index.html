@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <meta name="theme-color" content="#A855F7" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="습관" />
+  <link rel="apple-touch-icon" href="assets/icons/icon.svg" />
+  <link rel="manifest" href="manifest.json" />
+  <title>🐇 Habit Tracker</title>
+  <link rel="stylesheet" href="css/win95.css" />
+  <link rel="stylesheet" href="css/newjeans-theme.css" />
+</head>
+<body>
+
+  <!-- ── 메인 윈도우 ── -->
+  <div class="window" style="max-width: 900px; margin: 0 auto;">
+
+    <!-- 타이틀바 -->
+    <div class="window-titlebar">
+      <span class="title">🐇 Habit Tracker</span>
+      <div class="window-controls">
+        <button class="window-btn" title="최소화">_</button>
+        <button class="window-btn" title="최대화">□</button>
+        <button class="window-btn" title="닫기">✕</button>
+      </div>
+    </div>
+
+    <!-- 메뉴바 (향후 확장) -->
+    <div style="background: var(--win-bg); border-bottom: 1px solid var(--win-dark); padding: 2px 6px; font-size: 11px;">
+      <span style="padding: 2px 8px; cursor: default;">파일(F)</span>
+      <span style="padding: 2px 8px; cursor: default;">보기(V)</span>
+      <span style="padding: 2px 8px; cursor: default;">도움말(H)</span>
+    </div>
+
+    <div class="window-content">
+
+      <!-- 주간 날짜 표시 -->
+      <div style="margin-bottom: 6px; font-size: 10px; color: var(--win-darker);">
+        📅 <span id="title-week-range"></span>
+      </div>
+
+      <!-- 습관 테이블 윈도우 -->
+      <div class="window" style="margin-bottom: 8px;">
+        <div class="window-titlebar">
+          <span class="title" style="font-size: 7px;">📋 이번 주 습관</span>
+        </div>
+        <div class="window-content" style="padding: 6px;">
+          <div id="habit-table-container">
+            <table id="habit-table">
+              <thead>
+                <tr id="date-header-row">
+                  <th class="col-name">습관</th>
+                  <th class="col-target">목표/기준</th>
+                  <th class="col-day">월</th>
+                  <th class="col-day">화</th>
+                  <th class="col-day">수</th>
+                  <th class="col-day">목</th>
+                  <th class="col-day">금</th>
+                  <th class="col-day">토</th>
+                  <th class="col-day">일</th>
+                  <th class="col-delete"></th>
+                </tr>
+              </thead>
+              <tbody id="habit-tbody">
+                <!-- JS로 렌더됨 -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- 습관 추가 버튼 -->
+          <div style="margin-top: 8px;">
+            <button class="btn" id="btn-add-habit">+ 습관 추가</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- 대시보드 윈도우 -->
+      <div class="window">
+        <div class="window-titlebar">
+          <span class="title" style="font-size:7px;">📊 이번 주 달성 현황</span>
+        </div>
+        <div class="window-content" style="padding:8px;">
+          <div id="dashboard-list" style="display:flex; flex-direction:column; gap:6px;">
+            <!-- JS로 렌더됨 -->
+          </div>
+          <div id="dashboard-empty" style="color:var(--win-darker); font-size:10px; display:none;">
+            습관을 추가하면 달성률이 여기 표시됩니다.
+          </div>
+        </div>
+      </div>
+
+      <!-- 동물 패널 -->
+      <div class="window">
+        <div class="window-titlebar">
+          <span class="title" style="font-size:7px;">🌟 이번 달의 동물</span>
+        </div>
+        <div class="window-content" style="padding:10px; display:flex; align-items:center; gap:16px; flex-wrap:wrap;">
+          <div id="animal-canvas" style="flex-shrink:0;"></div>
+          <div style="flex:1; min-width:100px;">
+            <div id="animal-name" style="font-family:'Press Start 2P',monospace; font-size:10px; margin-bottom:6px;"></div>
+            <div id="animal-stage-label" style="font-size:10px; margin-bottom:8px;"></div>
+            <div style="display:flex; gap:4px; flex-wrap:wrap;" id="animal-stages"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /window-content -->
+
+    <!-- 상태바 -->
+    <div class="statusbar">
+      <span class="statusbar-item" id="status-count">습관 0개</span>
+      <span class="statusbar-item">
+        이번 주 달성률:
+        <span id="status-rate" style="font-weight: bold; margin: 0 4px;">0%</span>
+        <span class="progress-wrap">
+          <span class="progress-fill" id="progress-fill" style="width:0%"></span>
+        </span>
+      </span>
+    </div>
+
+  </div><!-- /window -->
+
+  <script type="module" src="js/app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/service-worker.js');
+      });
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,187 @@
+/* ── NewJeans × Win95 Theme ───────────────────────────
+   Win95 구조는 유지, 컬러/폰트를 NewJeans 감성으로 교체
+   ──────────────────────────────────────────────────── */
+
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+
+:root {
+  /* ── 기본 팔레트 ── */
+  --nj-periwinkle:  #DDE3FB;   /* 기본 배경 */
+  --nj-lavender:    #EDE8FF;   /* 창 배경 */
+  --nj-white:       #FFFFFF;
+  --nj-deep:        #1E1B4B;   /* 주 텍스트 (깊은 인디고) */
+  --nj-outline:     #6D28D9;   /* 테두리 어두운 보라 */
+  --nj-outline-lt:  #C4B5FD;   /* 테두리 연한 보라 */
+
+  /* ── 포인트 컬러 ── */
+  --nj-pink:        #F472B6;
+  --nj-mint:        #34D399;
+  --nj-sky:         #60A5FA;
+  --nj-yellow:      #FBBF24;
+  --nj-peach:       #FB923C;
+  --nj-red:         #F87171;
+
+  /* ── 타이틀바 그라디언트 ── */
+  --nj-titlebar-a:  #A855F7;   /* 보라 */
+  --nj-titlebar-b:  #3B82F6;   /* 파랑 */
+
+  /* ── 베벨 효과 (파스텔 버전) ── */
+  --border-raised:
+    inset -1px -1px var(--nj-outline),
+    inset  1px  1px var(--nj-white),
+    inset -2px -2px var(--nj-outline-lt),
+    inset  2px  2px var(--nj-lavender);
+  --border-sunken:
+    inset  1px  1px var(--nj-outline),
+    inset -1px -1px var(--nj-white),
+    inset  2px  2px var(--nj-outline-lt),
+    inset -2px -2px var(--nj-lavender);
+  --border-field:
+    inset 1px 1px var(--nj-outline),
+    inset -1px -1px var(--nj-outline-lt);
+}
+
+/* ── 기본 ── */
+body {
+  background: var(--nj-periwinkle);
+  color: var(--nj-deep);
+}
+
+/* ── 창 ── */
+.window {
+  background: var(--nj-lavender);
+  box-shadow: var(--border-raised);
+}
+
+/* ── 타이틀바 ── */
+.window-titlebar {
+  background: linear-gradient(135deg, var(--nj-titlebar-a), var(--nj-titlebar-b));
+  color: #fff;
+  text-shadow: 1px 1px 0 rgba(0,0,0,0.3);
+}
+
+/* ── 타이틀바 버튼 ── */
+.window-btn {
+  background: var(--nj-lavender);
+  box-shadow: var(--border-raised);
+  color: var(--nj-deep);
+}
+.window-btn:nth-child(3) { background: #FCA5A5; } /* 닫기 = 빨강 */
+.window-btn:nth-child(1) { background: #FDE68A; } /* 최소화 = 노랑 */
+.window-btn:nth-child(2) { background: #86EFAC; } /* 최대화 = 초록 */
+
+/* ── 버튼 ── */
+.btn {
+  background: var(--nj-lavender);
+  box-shadow: var(--border-raised);
+  color: var(--nj-deep);
+  font-weight: bold;
+}
+.btn:hover { background: #F3E8FF; }
+.btn:active, .btn.pressed {
+  box-shadow: var(--border-sunken);
+}
+
+/* ── 입력 / 셀렉트 ── */
+input[type="text"],
+input[type="number"],
+select {
+  background: var(--nj-white);
+  box-shadow: var(--border-field);
+  color: var(--nj-deep);
+}
+
+/* ── 체크박스 ── */
+.habit-check {
+  background: var(--nj-white);
+  box-shadow: var(--border-field);
+  border-radius: 2px;
+}
+.habit-check:checked { background: #FDF4FF; }
+.habit-check:checked::after {
+  content: '✔';
+  color: var(--nj-pink);
+  font-size: 20px;
+}
+
+/* ── 테이블 헤더 ── */
+#habit-table th {
+  background: var(--nj-lavender);
+  box-shadow: var(--border-raised);
+  color: var(--nj-deep);
+}
+
+/* ── 테이블 홀수행 ── */
+#habit-table tr:nth-child(even) td { background: #E9E3FD; }
+#habit-table tr:nth-child(even) td.td-name { background: #E9E3FD; }
+
+/* ── 호버 ── */
+#habit-table tr:hover td { background: var(--nj-titlebar-a); color: white; }
+#habit-table tr:hover td.td-name { background: var(--nj-titlebar-a); }
+@media (hover: none) {
+  #habit-table tr:hover td { background: unset; color: unset; }
+  #habit-table tr:nth-child(even):hover td { background: #E9E3FD; }
+  #habit-table tr:hover td.td-name { background: var(--nj-lavender); }
+  #habit-table tr:nth-child(even):hover td.td-name { background: #E9E3FD; }
+}
+
+/* ── sticky 이름 열 배경 ── */
+#habit-table td.td-name { background: var(--nj-lavender); }
+
+/* ── 상태바 ── */
+.statusbar {
+  background: var(--nj-lavender);
+  box-shadow: var(--border-sunken);
+}
+.statusbar-item {
+  box-shadow: inset 1px 1px var(--nj-outline), inset -1px -1px var(--nj-white);
+}
+
+/* ── 프로그레스 바 ── */
+.progress-fill { background: linear-gradient(90deg, var(--nj-pink), var(--nj-sky)); }
+
+/* ── 저장 버튼 강조 ── */
+.target-save-btn { color: var(--nj-deep); }
+
+/* ── 메뉴바 ── */
+.window > div[style*="border-bottom"] {
+  background: var(--nj-lavender) !important;
+  border-bottom-color: var(--nj-outline-lt) !important;
+  color: var(--nj-deep);
+}
+
+/* ── 대시보드 프로그레스 바 ── */
+#dashboard-list > div > div > div {
+  background: linear-gradient(90deg, var(--nj-pink), var(--nj-titlebar-b)) !important;
+}
+
+/* ── 타이틀 텍스트 ── */
+.window-titlebar .title {
+  font-family: 'Press Start 2P', monospace;
+  letter-spacing: 1px;
+}
+
+/* ── 모바일 뱃지 ── */
+.mobile-target-badge { color: var(--nj-outline); }
+
+/* ── 스크롤바 ── */
+::-webkit-scrollbar-track { background: var(--nj-periwinkle); }
+::-webkit-scrollbar-thumb { background: var(--nj-lavender); box-shadow: var(--border-raised); }
+
+/* ── 반짝임 애니메이션 (stage 4) ── */
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(1.05); }
+}
+.animal-stage4 { animation: sparkle 2s ease-in-out infinite; }
+
+@keyframes sparkle-dot {
+  0%, 100% { opacity: 0; }
+  50%       { opacity: 1; }
+}
+.sparkle-dot {
+  animation: sparkle-dot 1.5s ease-in-out infinite;
+}
+.sparkle-dot:nth-child(2) { animation-delay: 0.3s; }
+.sparkle-dot:nth-child(3) { animation-delay: 0.6s; }
+.sparkle-dot:nth-child(4) { animation-delay: 0.9s; }

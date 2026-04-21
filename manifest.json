@@ -1,0 +1,18 @@
+{
+  "name": "Habit Tracker",
+  "short_name": "습관",
+  "description": "12간지 윈도우95 스타일 습관 추적기",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#c0c0c0",
+  "theme_color": "#000080",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "assets/icons/icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
