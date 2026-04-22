@@ -83,6 +83,8 @@ function renderTable() {
     const badge = document.createElement('div');
     badge.className = 'mobile-target-badge';
     badge.textContent = `주 ${habit.target}회 ${habit.criteria}`;
+    badge.style.cursor = 'pointer';
+    badge.addEventListener('click', () => showTargetPopup(habit, badge));
     tdName.appendChild(badge);
     tr.appendChild(tdName);
 
@@ -674,6 +676,97 @@ function importData() {
     reader.readAsText(file);
   });
   input.click();
+}
+
+// ── 모바일 목표 수정 팝업 ─────────────────────────────
+function showTargetPopup(habit, anchorEl) {
+  const existing = document.getElementById('target-popup');
+  if (existing) existing.remove();
+
+  const popup = document.createElement('div');
+  popup.id = 'target-popup';
+  popup.className = 'window';
+  popup.style.cssText = 'position:fixed;z-index:9999;min-width:200px;left:50%;top:50%;transform:translate(-50%,-50%);';
+
+  const titlebar = document.createElement('div');
+  titlebar.className = 'window-titlebar';
+  const titleSpan = document.createElement('span');
+  titleSpan.className = 'title';
+  titleSpan.style.fontSize = 'var(--fs-xs)';
+  titleSpan.textContent = '목표 설정';
+  titlebar.appendChild(titleSpan);
+  popup.appendChild(titlebar);
+
+  const body = document.createElement('div');
+  body.className = 'window-content';
+  body.style.cssText = 'padding:12px;display:flex;flex-direction:column;gap:8px;';
+
+  const row = document.createElement('div');
+  row.style.cssText = 'display:flex;gap:6px;align-items:center;';
+
+  const label1 = document.createElement('span');
+  label1.textContent = '주';
+  label1.style.fontSize = 'var(--fs-sm)';
+
+  const numInput = document.createElement('input');
+  numInput.type = 'number';
+  numInput.min = 1; numInput.max = 7;
+  numInput.value = habit.target;
+  numInput.style.cssText = 'width:40px;font-size:var(--fs-base);';
+
+  const label2 = document.createElement('span');
+  label2.textContent = '회';
+  label2.style.fontSize = 'var(--fs-sm)';
+
+  const sel = document.createElement('select');
+  sel.style.fontSize = 'var(--fs-sm)';
+  ['이상', '이하'].forEach(opt => {
+    const o = document.createElement('option');
+    o.value = opt; o.textContent = opt;
+    if (habit.criteria === opt) o.selected = true;
+    sel.appendChild(o);
+  });
+
+  row.append(label1, numInput, label2, sel);
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:6px;justify-content:flex-end;';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.className = 'btn btn-small';
+  cancelBtn.textContent = '취소';
+  cancelBtn.addEventListener('click', () => popup.remove());
+
+  const saveBtn = document.createElement('button');
+  saveBtn.className = 'btn btn-small';
+  saveBtn.textContent = '저장';
+  saveBtn.style.cssText = 'background:#000080;color:#fff;';
+  saveBtn.addEventListener('click', () => {
+    const newTarget = Math.max(1, parseInt(numInput.value) || 1);
+    const newCriteria = sel.value;
+    const updated = applyTargetChange(habit, newTarget, newCriteria);
+    Object.assign(habit, updated);
+    saveHabits(habits);
+    anchorEl.textContent = `주 ${newTarget}회 ${newCriteria}`;
+    popup.remove();
+    renderTable();
+    updateStatusBar();
+    renderDashboard();
+  });
+
+  btnRow.append(cancelBtn, saveBtn);
+  body.append(row, btnRow);
+  popup.appendChild(body);
+  document.body.appendChild(popup);
+
+  setTimeout(() => {
+    document.addEventListener('click', function handler(e) {
+      if (!popup.contains(e.target) && e.target !== anchorEl) {
+        popup.remove();
+        document.removeEventListener('click', handler);
+      }
+    });
+  }, 0);
 }
 
 // ── 초기화 ────────────────────────────────────────────
