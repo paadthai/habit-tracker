@@ -399,6 +399,10 @@ select:focus {
   /* + 습관 추가 버튼 전체 너비 */
   #btn-add-habit { width: 100%; }
 
+  /* 하단 3패널 세로 배치 */
+  #bottom-panels { flex-direction: column; }
+  #bottom-panels > .window { min-width: unset !important; width: 100%; }
+
   /* 스크롤바 모바일에서 숨기기 */
   #habit-table-container::-webkit-scrollbar { height: 4px; }
 }
