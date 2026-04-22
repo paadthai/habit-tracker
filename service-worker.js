@@ -1,11 +1,11 @@
-const CACHE_NAME = 'habit-tracker-v2';
+const CACHE_NAME = 'habit-tracker-v3';
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/css/win95.css',
-  '/js/app.js',
-  '/js/storage.js',
-  '/manifest.json'
+  './',
+  './index.html',
+  './css/win95.css',
+  './js/app.js',
+  './js/storage.js',
+  './manifest.json'
 ];
 
 self.addEventListener('install', event => {
