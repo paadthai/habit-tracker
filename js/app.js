@@ -1,5 +1,5 @@
 import { getHabits, saveHabits, getLog, setLog } from './storage.js';
-import { renderAnimalSVG, rateToStage, getCurrentAnimal, ANIMAL_NAMES } from './animals.js';
+import { renderAnimalSVG, rateToStage, getCurrentAnimal, ANIMAL_NAMES, MONTH_ANIMAL, initSprite } from './animals.js';
 
 // ── 목표 이력 조회 ─────────────────────────────────────
 // dateStr 시점에 유효했던 target/criteria를 반환
@@ -23,9 +23,9 @@ function nextMonday() {
   return formatDate(d);
 }
 
-// target/criteria 변경은 다음 주 월요일부터 적용
+// target/criteria 변경은 이번 주 월요일부터 즉시 적용
 function applyTargetChange(habit, newTarget, newCriteria) {
-  const from = nextMonday();
+  const from = formatDate(weekDates[0]); // 이번 주 월요일
   const history = habit.targetHistory ? [...habit.targetHistory] : [];
   const idx = history.findIndex(e => e.from === from);
   const entry = { from, target: newTarget, criteria: newCriteria };
@@ -111,7 +111,7 @@ function renderTable() {
     saveBtn.className = 'btn btn-small target-save-btn';
     saveBtn.textContent = '저장';
     saveBtn.style.cssText = 'width:auto; padding:0 6px; font-size:9px;';
-    saveBtn.title = '다음 주 월요일부터 적용됩니다';
+    saveBtn.title = '저장 즉시 이번 주부터 적용됩니다';
 
     // 값이 바뀌면 저장 버튼 활성화
     const markDirty = () => {
@@ -128,7 +128,7 @@ function renderTable() {
       Object.assign(habit, updated);
       saveHabits(habits);
       // 뱃지 업데이트
-      badge.textContent = `주 ${newTarget}회 ${newCriteria} (다음주부터)`;
+      badge.textContent = `주 ${newTarget}회 ${newCriteria} `;
       saveBtn.style.background = '';
       saveBtn.textContent = '저장';
       updateStatusBar();
@@ -180,13 +180,13 @@ function renderTable() {
 }
 
 function addHabit() {
-  const today = formatDate(new Date());
+  const thisMonday = formatDate(weekDates[0]);
   const newHabit = {
     id: crypto.randomUUID(),
     name: '새 습관',
     target: 1,
     criteria: '이상',
-    targetHistory: [{ from: today, target: 1, criteria: '이상' }]
+    targetHistory: [{ from: thisMonday, target: 1, criteria: '이상' }]
   };
   habits = [...habits, newHabit];
   saveHabits(habits);
@@ -242,6 +242,8 @@ function updateStatusBar() {
   if (countEl) countEl.textContent = `습관 ${habits.length}개`;
   renderDashboard();
   renderAnimalPanel(rate);
+  renderMonthlyWeeks();
+  renderYearlyAnimals();
 }
 
 // ── 대시보드 ──────────────────────────────────────────
@@ -326,6 +328,157 @@ function renderTitleDate() {
   el.textContent = `${s.getFullYear()}년 ${s.getMonth()+1}월 ${s.getDate()}일 ~ ${e.getMonth()+1}월 ${e.getDate()}일`;
 }
 
+// ── 주차 계산 (수요일 기준) ─────────────────────────
+// 1일이 수(2) 이상이면 그 주가 1주차, 월(0)/화(1)이면 이전달 주차
+function getMonthWeeks(year, month) {
+  const first = new Date(year, month - 1, 1);
+  const last = new Date(year, month, 0);
+  const firstDow = (first.getDay() + 6) % 7; // Mon=0 … Sun=6
+
+  // 첫 주 시작 월요일
+  let start = new Date(first);
+  if (firstDow <= 1) {
+    // 월/화: 이전달 주차 → 다음 월요일부터 1주차
+    start.setDate(1 + (7 - firstDow));
+  } else {
+    // 수 이상: 그 주가 1주차 → 해당 주 월요일로 당김
+    start.setDate(1 - firstDow);
+  }
+
+  const weeks = [];
+  let weekNum = 1;
+  while (start <= last) {
+    const end = new Date(start);
+    end.setDate(start.getDate() + 6);
+    weeks.push({ weekNum, start: new Date(start), end: new Date(end) });
+    start.setDate(start.getDate() + 7);
+    weekNum++;
+  }
+  return weeks;
+}
+
+// 날짜 배열로 달성률 계산
+function calcRateForDates(dates) {
+  if (!habits.length) return 0;
+  let total = 0;
+  habits.forEach(habit => {
+    const refDate = formatDate(dates[dates.length - 1]);
+    const { target, criteria } = getTargetAt(habit, refDate);
+    const checks = dates.reduce((s, d) => s + (getLog(formatDate(d))[habit.id] ? 1 : 0), 0);
+    if (criteria === '이하') total += checks <= target ? 1 : target / checks;
+    else total += Math.min(checks / target, 1);
+  });
+  return Math.round((total / habits.length) * 100);
+}
+
+// 해당 월 전체 달성률
+function calcMonthRate(year, month) {
+  const weeks = getMonthWeeks(year, month);
+  if (!weeks.length) return 0;
+  let sum = 0;
+  weeks.forEach(({ start, end }) => {
+    const dates = [];
+    const d = new Date(start);
+    while (d <= end) { dates.push(new Date(d)); d.setDate(d.getDate() + 1); }
+    sum += calcRateForDates(dates);
+  });
+  return Math.round(sum / weeks.length);
+}
+
+// ── 섹션 1: 이번 달 주간 달성 현황 ────────────────────
+function renderMonthlyWeeks() {
+  const panel = document.getElementById('monthly-weeks-panel');
+  if (!panel) return;
+  while (panel.firstChild) panel.removeChild(panel.firstChild);
+
+  const now = new Date();
+  const year = now.getFullYear(), month = now.getMonth() + 1;
+  const today = formatDate(now);
+  const weeks = getMonthWeeks(year, month);
+  const currentWeekMon = formatDate(weekDates[0]);
+
+  // 세로 바 컨테이너 (바들을 가로로 나열, 높이 채움)
+  const container = document.createElement('div');
+  container.style.cssText = 'display:flex; gap:4px; align-items:flex-end; flex:1;';
+
+  weeks.forEach(({ weekNum, start, end }) => {
+    const dates = [];
+    const d = new Date(start);
+    while (d <= end) { dates.push(new Date(d)); d.setDate(d.getDate() + 1); }
+    const rate = calcRateForDates(dates);
+    const isCurrent = formatDate(start) === currentWeekMon;
+    const isFuture = start > now;
+
+    const col = document.createElement('div');
+    col.style.cssText = 'flex:1; height:100%; display:flex; flex-direction:column; align-items:center; gap:3px;';
+
+    const pct = document.createElement('span');
+    pct.style.cssText = `font-size:9px; ${isCurrent ? 'color:#A855F7; font-weight:bold;' : 'color:#555;'}`;
+    pct.textContent = isFuture ? '-' : `${rate}%`;
+
+    const barWrap = document.createElement('div');
+    barWrap.style.cssText = 'width:100%; flex:1; min-height:0; box-shadow:inset 1px 1px #808080, inset -1px -1px #fff; background:white; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden;';
+
+    const fill = document.createElement('div');
+    const fillColor = isFuture ? 'transparent' : rate >= 100 ? '#008000' : isCurrent ? '#A855F7' : '#000080';
+    fill.style.cssText = `width:100%; height:${isFuture ? 0 : rate}%; background:${fillColor}; transition:height 0.4s;`;
+    barWrap.appendChild(fill);
+
+    const label = document.createElement('span');
+    label.style.cssText = `font-size:9px; ${isCurrent ? 'color:#A855F7; font-weight:bold;' : ''}`;
+    label.textContent = `${weekNum}주`;
+
+    col.appendChild(pct);
+    col.appendChild(barWrap);
+    col.appendChild(label);
+    container.appendChild(col);
+  });
+
+  panel.appendChild(container);
+}
+
+// ── 섹션 3: 월별 달성현황 (12동물) ────────────────────
+function renderYearlyAnimals() {
+  const panel = document.getElementById('yearly-animals-panel');
+  if (!panel) return;
+  while (panel.firstChild) panel.removeChild(panel.firstChild);
+
+  const now = new Date();
+  const curMonth = now.getMonth() + 1;
+  const curYear = now.getFullYear();
+
+  const grid = document.createElement('div');
+  grid.style.cssText = 'display:grid; grid-template-columns:repeat(3,1fr); gap:4px;';
+
+  for (let m = 1; m <= 12; m++) {
+    const animalKey = MONTH_ANIMAL[m];
+    const isCurrent = m === curMonth;
+    const isFuture = m > curMonth;
+
+    let stage;
+    if (isFuture) {
+      stage = 1;
+    } else if (isCurrent) {
+      stage = rateToStage(calcWeeklyRate());
+    } else {
+      stage = rateToStage(calcMonthRate(curYear, m));
+    }
+
+    const cell = document.createElement('div');
+    cell.style.cssText = `text-align:center; ${isCurrent ? 'outline:2px solid #A855F7;' : ''}`;
+
+    cell.innerHTML = renderAnimalSVG(animalKey, stage, 48);
+
+    const lbl = document.createElement('div');
+    lbl.style.cssText = 'font-size:8px; margin-top:2px;';
+    lbl.textContent = `${m}월`;
+    cell.appendChild(lbl);
+
+    grid.appendChild(cell);
+  }
+  panel.appendChild(grid);
+}
+
 // ── 동물 패널 ──────────────────────────────────────
 const STAGE_LABELS = ['', '윤곽선 (0-25%)', '25% 채색 (26-50%)', '75% 채색 (51-75%)', '풀컬러 ✦ (76-100%)'];
 
@@ -349,10 +502,9 @@ function renderAnimalPanel(rate) {
     const wrap = document.createElement('div');
     wrap.style.cssText = `opacity:${stage >= s ? 1 : 0.3}; cursor:pointer; border:${stage === s ? '2px solid #A855F7' : '2px solid transparent'};`;
     wrap.title = STAGE_LABELS[s];
-    wrap.innerHTML = renderAnimalSVG(animalKey, s);
+    wrap.innerHTML = renderAnimalSVG(animalKey, s, 40);
+    // 이전 SVG 크기 조절 코드 제거됨 (sizePx 파라미터로 처리)
     // SVG 크기 줄이기
-    const svg = wrap.querySelector('svg');
-    if (svg) { svg.setAttribute('width', '40'); svg.setAttribute('height', '40'); }
     stagesEl.appendChild(wrap);
   }
 }
@@ -367,4 +519,4 @@ function init() {
   renderDashboard();
 }
 
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => { initSprite().then(init); });

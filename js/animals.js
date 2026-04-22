@@ -330,54 +330,122 @@ function hexWithAlpha(hex, alpha) {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-// ── SVG 생성 ────────────────────────────────────────
-export function renderAnimalSVG(animalKey, stage) {
-  const map = MAPS[animalKey];
-  if (!map) return '';
+// ── 스프라이트 시트 설정 ─────────────────────────────
+// final_cha.png: 3열 × 4행, 896×1200px → 셀 ~298×300px (거의 정사각형)
+// 순서: 쥐(0) 소(1) 호랑이(2) / 토끼(3) 용(4) 뱀(5) / 말(6) 양(7) 원숭이(8) / 닭(9) 개(10) 돼지(11)
+const SPRITE_URL_RAW = '../assets/final_cha.png';
+let _spriteDataURL = null; // 배경 제거된 캐시
+const SPRITE_COLS = 3;
+const SPRITE_ROWS = 4;
+const SPRITE_W = 896;  // 원본 이미지 너비
+const SPRITE_H = 1200; // 원본 이미지 높이
+const SPRITE_INDEX = {
+  rat: 0, ox: 1, tiger: 2,
+  rabbit: 3, dragon: 4, snake: 5,
+  horse: 6, sheep: 7, monkey: 8,
+  rooster: 9, dog: 10, pig: 11,
+};
 
-  const palette = getStagePalette(animalKey, stage);
-  const size = PIXEL_SIZE;
-  const total = GRID * size;
+const STAGE_FILTER = {
+  1: 'grayscale(100%) brightness(0.7)',
+  2: 'grayscale(40%) saturate(0.4) brightness(0.85)',
+  3: 'saturate(0.6) brightness(0.9)',
+  4: 'saturate(2) brightness(1.1) drop-shadow(0 0 8px rgba(255,210,0,0.9))',
+};
 
-  let rects = '';
-  for (let row = 0; row < GRID; row++) {
-    for (let col = 0; col < GRID; col++) {
-      const code = parseInt(map[row][col], 10);
-      if (code === 0) continue;
-      const color = palette[code] || 'transparent';
-      if (color === 'transparent') continue;
-      rects += `<rect x="${col*size}" y="${row*size}" width="${size}" height="${size}" fill="${color}"/>`;
-    }
+// ── 배경 제거: 가장자리에서 BFS flood fill → 연결된 배경만 투명화 ──
+// 단순 색상 임계값 방식은 토끼 흰 얼굴 등 내부 흰색까지 지우므로
+// 가장자리와 연결된 무채색 픽셀만 제거하는 flood fill 사용
+function removeCheckerboard(img) {
+  const canvas = document.createElement('canvas');
+  const W = img.naturalWidth, H = img.naturalHeight;
+  canvas.width = W; canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  ctx.drawImage(img, 0, 0);
+
+  const data = ctx.getImageData(0, 0, W, H);
+  const px = data.data;
+
+  function isBg(x, y) {
+    const i = (y * W + x) * 4;
+    const r = px[i], g = px[i+1], b = px[i+2];
+    return Math.max(r,g,b) - Math.min(r,g,b) < 25 && r > 100;
   }
 
-  // stage 4: 반짝임 추가
-  let sparkles = '';
-  if (stage === 4) {
-    sparkles = `
-      <g class="sparkle-dot">
-        <text x="4" y="14" font-size="10" fill="white">✦</text>
-      </g>
-      <g class="sparkle-dot">
-        <text x="${total-16}" y="20" font-size="8" fill="white">✦</text>
-      </g>
-      <g class="sparkle-dot">
-        <text x="${total/2-4}" y="${total-4}" font-size="8" fill="white">✦</text>
-      </g>
-      <g class="sparkle-dot">
-        <text x="${total-12}" y="${total-12}" font-size="10" fill="white">★</text>
-      </g>`;
+  const visited = new Uint8Array(W * H);
+  const stack = [];
+
+  // 네 테두리 픽셀을 시작점으로
+  for (let x = 0; x < W; x++) { stack.push(x, 0); stack.push(x, H-1); }
+  for (let y = 1; y < H-1; y++) { stack.push(0, y); stack.push(W-1, y); }
+
+  while (stack.length) {
+    const y = stack.pop(), x = stack.pop();
+    if (x < 0 || x >= W || y < 0 || y >= H) continue;
+    const idx = y * W + x;
+    if (visited[idx]) continue;
+    visited[idx] = 1;
+    if (!isBg(x, y)) continue;
+
+    px[idx * 4 + 3] = 0; // 투명
+
+    stack.push(x+1, y); stack.push(x-1, y);
+    stack.push(x, y+1); stack.push(x, y-1);
   }
 
+  ctx.putImageData(data, 0, 0);
+  return canvas.toDataURL('image/png');
+}
+
+// 스프라이트 DataURL 초기화 (앱 시작 시 한 번만)
+export function initSprite() {
+  return new Promise((resolve) => {
+    if (_spriteDataURL) { resolve(); return; }
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => {
+      _spriteDataURL = removeCheckerboard(img);
+      resolve();
+    };
+    img.src = SPRITE_URL_RAW;
+  });
+}
+
+// ── 스프라이트 렌더링 ────────────────────────────────
+export function renderAnimalSVG(animalKey, stage, sizePx = 128) {
+  const idx = SPRITE_INDEX[animalKey];
+  if (idx === undefined) return '';
+
+  const col = idx % SPRITE_COLS;
+  const row = Math.floor(idx / SPRITE_COLS);
+  const scale = sizePx / (SPRITE_W / SPRITE_COLS);
+  const bgW = Math.round(SPRITE_W * scale);
+  const bgH = Math.round(SPRITE_H * scale);
+  const cellH = Math.round((SPRITE_H / SPRITE_ROWS) * scale);
+  const bgX = -(col * sizePx);
+  const bgY = -(row * cellH);
+  const url = _spriteDataURL || SPRITE_URL_RAW;
+
+  const filter = STAGE_FILTER[stage] || STAGE_FILTER[4];
   const animClass = stage === 4 ? 'animal-stage4' : '';
-  return `<svg xmlns="http://www.w3.org/2000/svg"
-    viewBox="0 0 ${total} ${total}"
-    width="${total}" height="${total}"
-    class="${animClass}"
-    style="image-rendering:pixelated; display:block;"
-    shape-rendering="crispEdges">
-    ${rects}
+  const sparkles = stage === 4
+    ? '<span class="sparkle-dot" style="position:absolute;top:2px;left:2px;font-size:10px;color:white;pointer-events:none">✦</span>'
+      + '<span class="sparkle-dot" style="position:absolute;top:4px;right:2px;font-size:8px;color:white;pointer-events:none">✦</span>'
+      + '<span class="sparkle-dot" style="position:absolute;bottom:2px;right:2px;font-size:10px;color:white;pointer-events:none">★</span>'
+    : '';
+
+  return `<div class="${animClass}" style="position:relative;display:inline-block;width:${sizePx}px;height:${sizePx}px;">
+    <div style="
+      width:${sizePx}px;height:${sizePx}px;
+      background-image:url('${url}');
+      background-size:${bgW}px ${bgH}px;
+      background-position:${bgX}px ${bgY}px;
+      background-repeat:no-repeat;
+      image-rendering:pixelated;
+      filter:${filter};
+    "></div>
     ${sparkles}
-  </svg>`;
+  </div>`;
 }
 
 // ── 달성률 → 스테이지 ──────────────────────────────
