@@ -333,7 +333,7 @@ function hexWithAlpha(hex, alpha) {
 // ── 스프라이트 시트 설정 ─────────────────────────────
 // final_cha.png: 3열 × 4행, 896×1200px → 셀 ~298×300px (거의 정사각형)
 // 순서: 쥐(0) 소(1) 호랑이(2) / 토끼(3) 용(4) 뱀(5) / 말(6) 양(7) 원숭이(8) / 닭(9) 개(10) 돼지(11)
-const SPRITE_URL_RAW = '../assets/final_cha.png';
+const SPRITE_URL_RAW = './assets/final_cha.png';
 let _spriteDataURL = null; // 배경 제거된 캐시
 const SPRITE_COLS = 3;
 const SPRITE_ROWS = 4;
