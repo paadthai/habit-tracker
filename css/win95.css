@@ -18,12 +18,17 @@
   --border-raised: inset -1px -1px var(--win-dark), inset 1px 1px var(--win-white), inset -2px -2px var(--win-darker), inset 2px 2px var(--win-bg);
   --border-sunken: inset 1px 1px var(--win-dark), inset -1px -1px var(--win-white), inset 2px 2px var(--win-darker), inset -2px -2px var(--win-bg);
   --border-field: inset 1px 1px var(--win-darker), inset -1px -1px var(--win-white);
+
+  /* ── 폰트 스케일 (3단계) ── */
+  --fs-xs:   8px;   /* 픽셀아트 타이틀, 날짜 서브레이블 */
+  --fs-sm:  10px;   /* 보조 텍스트, 배지, 라벨 */
+  --fs-base: 11px;  /* 본문, 버튼, 입력창 */
 }
 
 body {
   background: var(--win-bg);
   font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif;
-  font-size: 11px;
+  font-size: var(--fs-base);
   color: var(--win-text);
   min-height: 100vh;
   /* iOS 노치/홈바 safe area 대응 */
@@ -49,7 +54,7 @@ body {
 
 .window-titlebar .title {
   font-family: 'Press Start 2P', monospace;
-  font-size: 8px;
+  font-size: var(--fs-xs);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -67,7 +72,7 @@ body {
   border: none;
   box-shadow: var(--border-raised);
   cursor: pointer;
-  font-size: 9px;
+  font-size: var(--fs-xs);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -92,7 +97,7 @@ body {
   box-shadow: var(--border-raised);
   padding: 4px 12px;
   font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif;
-  font-size: 11px;
+  font-size: var(--fs-base);
   cursor: pointer;
   min-width: 75px;
   height: 23px;
@@ -118,7 +123,7 @@ body {
   width: 20px;
   height: 20px;
   padding: 0;
-  font-size: 10px;
+  font-size: var(--fs-sm);
   font-weight: bold;
 }
 
@@ -131,7 +136,7 @@ select {
   box-shadow: var(--border-field);
   padding: 2px 4px;
   font-family: 'MS Sans Serif', 'Segoe UI', Tahoma, sans-serif;
-  font-size: 11px;
+  font-size: var(--fs-base);
   height: 21px;
   color: var(--win-black);
 }
@@ -147,8 +152,8 @@ select:focus {
 .habit-check {
   appearance: none;
   -webkit-appearance: none;
-  width: 36px;
-  height: 36px;
+  width: 24px;
+  height: 24px;
   background: white;
   box-shadow: var(--border-field);
   cursor: pointer;
@@ -157,15 +162,23 @@ select:focus {
   justify-content: center;
   position: relative;
   flex-shrink: 0;
-  /* 44px 터치 영역 확보 (iOS HIG) */
   touch-action: manipulation;
+}
+
+.habit-check::after {
+  content: '·';
+  font-size: var(--fs-sm);
+  color: var(--win-darker);
+  position: absolute;
+  opacity: 0.4;
 }
 
 .habit-check:checked::after {
   content: '✔';
-  font-size: 18px;
+  font-size: 13px;
   color: var(--win-black);
   position: absolute;
+  opacity: 1;
 }
 
 .habit-check:active {
@@ -189,14 +202,14 @@ select:focus {
   box-shadow: var(--border-raised);
   padding: 4px 6px;
   text-align: center;
-  font-size: 10px;
+  font-size: var(--fs-sm);
   font-weight: bold;
   white-space: nowrap;
 }
 
 #habit-table th.col-name { width: 140px; text-align: left; position: sticky; left: 0; z-index: 2; }
 #habit-table th.col-target { width: 120px; }
-#habit-table th.col-day { width: 44px; }
+#habit-table th.col-day { width: 36px; }
 #habit-table th.col-delete { width: 32px; }
 
 #habit-table td {
@@ -243,17 +256,73 @@ select:focus {
 
 .day-header-label {
   display: block;
-  font-size: 8px;
+  font-size: var(--fs-xs);
   color: var(--win-darker);
 }
 
 /* 모바일 목표 뱃지 — 데스크탑에서 숨기고 모바일에서 표시 */
 .mobile-target-badge {
   display: none;
-  font-size: 9px;
+  font-size: var(--fs-xs);
   color: var(--win-darker);
   margin-top: 2px;
   white-space: nowrap;
+}
+
+/* ── Modal (Win95 다이얼로그) ── */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.4);
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-window {
+  background: var(--win-bg);
+  box-shadow: var(--border-raised);
+  min-width: 280px;
+  max-width: 420px;
+  width: 90%;
+}
+
+.modal-body {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.modal-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--fs-sm);
+}
+
+.modal-bar-wrap {
+  flex: 1;
+  height: 14px;
+  box-shadow: var(--border-sunken);
+  background: white;
+  overflow: hidden;
+}
+
+.modal-bar-fill {
+  height: 100%;
+  background: var(--win-title);
+  transition: width 0.3s;
+}
+
+.modal-bar-fill.complete { background: #008080; }
+
+.modal-footer {
+  padding: 6px 8px;
+  border-top: 1px solid var(--win-dark);
+  display: flex;
+  justify-content: flex-end;
 }
 
 /* ── Add row ── */
@@ -267,7 +336,7 @@ select:focus {
   background: var(--win-bg);
   box-shadow: var(--border-sunken);
   padding: 2px 6px;
-  font-size: 10px;
+  font-size: var(--fs-sm);
   display: flex;
   gap: 8px;
 }
@@ -310,15 +379,16 @@ select:focus {
   .mobile-target-badge { display: block; }
 
   #habit-table th.col-name { width: 90px; }
-  #habit-table th.col-day { width: 40px; }
+  #habit-table th.col-day { width: 32px; }
   #habit-table th.col-delete { width: 28px; }
 
-  /* 체크박스는 그대로 크게 유지 */
-  .habit-check { width: 36px; height: 36px; }
+  /* 체크박스 터치 영역 확보 (시각 크기 유지) */
+  .habit-check { width: 24px; height: 24px; }
+  #habit-table td:has(.habit-check) { padding: 6px 4px; }
 
   /* 버튼 터치 영역 */
-  .btn { height: 36px; font-size: 12px; }
-  .btn-small { width: 28px; height: 28px; font-size: 13px; }
+  .btn { height: 32px; font-size: var(--fs-base); }
+  .btn-small { width: 28px; height: 28px; font-size: var(--fs-sm); }
 
   /* 상태바 가로 스크롤 방지 */
   .statusbar { flex-wrap: wrap; gap: 4px; }
@@ -340,3 +410,19 @@ select:focus {
   #habit-table tr:hover td.td-name { background: var(--win-bg); }
   #habit-table tr:nth-child(even):hover td.td-name { background: #d4d0c8; }
 }
+
+/* ── 동물 stage 4 반짝임 ── */
+@keyframes sparkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.6; transform: scale(1.05); }
+}
+.animal-stage4 { animation: sparkle 2s ease-in-out infinite; }
+
+@keyframes sparkle-dot {
+  0%, 100% { opacity: 0; }
+  50%       { opacity: 1; }
+}
+.sparkle-dot { animation: sparkle-dot 1.5s ease-in-out infinite; }
+.sparkle-dot:nth-child(2) { animation-delay: 0.3s; }
+.sparkle-dot:nth-child(3) { animation-delay: 0.6s; }
+.sparkle-dot:nth-child(4) { animation-delay: 0.9s; }

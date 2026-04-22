@@ -98,10 +98,11 @@ select {
   border-radius: 2px;
 }
 .habit-check:checked { background: #FDF4FF; }
+.habit-check::after { color: var(--nj-outline-lt); }
 .habit-check:checked::after {
   content: '✔';
   color: var(--nj-pink);
-  font-size: 20px;
+  font-size: 13px;
 }
 
 /* ── 테이블 헤더 ── */

@@ -1,4 +1,4 @@
-import { getHabits, saveHabits, getLog, setLog } from './storage.js';
+import { getHabits, saveHabits, getLog, setLog, loadData, saveData } from './storage.js';
 import { renderAnimalSVG, rateToStage, getCurrentAnimal, ANIMAL_NAMES, MONTH_ANIMAL, initSprite } from './animals.js';
 
 // ── 목표 이력 조회 ─────────────────────────────────────
@@ -110,7 +110,7 @@ function renderTable() {
     const saveBtn = document.createElement('button');
     saveBtn.className = 'btn btn-small target-save-btn';
     saveBtn.textContent = '저장';
-    saveBtn.style.cssText = 'width:auto; padding:0 6px; font-size:9px;';
+    saveBtn.style.cssText = 'width:auto; padding:0 6px; font-size:var(--fs-xs);';
     saveBtn.title = '저장 즉시 이번 주부터 적용됩니다';
 
     // 값이 바뀌면 저장 버튼 활성화
@@ -273,7 +273,7 @@ function renderDashboard() {
     row.style.cssText = 'display:flex; align-items:center; gap:6px;';
 
     const label = document.createElement('span');
-    label.style.cssText = 'width:100px; font-size:10px; flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
+    label.style.cssText = 'width:100px; font-size:var(--fs-sm); flex-shrink:0; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;';
     label.textContent = habit.name;
     label.title = habit.name;
 
@@ -281,15 +281,15 @@ function renderDashboard() {
     barWrap.style.cssText = 'flex:1; height:16px; box-shadow:inset 1px 1px #808080, inset -1px -1px #fff; background:white; overflow:hidden;';
 
     const barFill = document.createElement('div');
-    barFill.style.cssText = `height:100%; width:${pct}%; background:${pct >= 100 ? '#008000' : '#000080'}; transition:width 0.3s;`;
+    barFill.style.cssText = `height:100%; width:${pct}%; background:${pct >= 100 ? '#008080' : '#000080'}; transition:width 0.3s;`;
     barWrap.appendChild(barFill);
 
     const pctLabel = document.createElement('span');
-    pctLabel.style.cssText = 'font-size:10px; width:32px; text-align:right; flex-shrink:0;';
+    pctLabel.style.cssText = 'font-size:var(--fs-sm); width:32px; text-align:right; flex-shrink:0;';
     pctLabel.textContent = `${pct}%`;
 
     const detail = document.createElement('span');
-    detail.style.cssText = 'font-size:9px; color:#808080; width:48px; flex-shrink:0;';
+    detail.style.cssText = 'font-size:var(--fs-xs); color:#808080; width:48px; flex-shrink:0;';
     detail.textContent = `${checks}/${target}${criteria === '이하' ? '↓' : '↑'}`;
 
     row.appendChild(label);
@@ -413,19 +413,19 @@ function renderMonthlyWeeks() {
     col.style.cssText = 'flex:1; height:100%; display:flex; flex-direction:column; align-items:center; gap:3px;';
 
     const pct = document.createElement('span');
-    pct.style.cssText = `font-size:9px; ${isCurrent ? 'color:#A855F7; font-weight:bold;' : 'color:#555;'}`;
+    pct.style.cssText = `font-size:var(--fs-xs); ${isCurrent ? 'color:var(--win-title); font-weight:bold;' : 'color:#555;'}`;
     pct.textContent = isFuture ? '-' : `${rate}%`;
 
     const barWrap = document.createElement('div');
     barWrap.style.cssText = 'width:100%; flex:1; min-height:0; box-shadow:inset 1px 1px #808080, inset -1px -1px #fff; background:white; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden;';
 
     const fill = document.createElement('div');
-    const fillColor = isFuture ? 'transparent' : rate >= 100 ? '#008000' : isCurrent ? '#A855F7' : '#000080';
+    const fillColor = isFuture ? 'transparent' : rate >= 100 ? '#008080' : isCurrent ? 'var(--win-title)' : '#000080';
     fill.style.cssText = `width:100%; height:${isFuture ? 0 : rate}%; background:${fillColor}; transition:height 0.4s;`;
     barWrap.appendChild(fill);
 
     const label = document.createElement('span');
-    label.style.cssText = `font-size:9px; ${isCurrent ? 'color:#A855F7; font-weight:bold;' : ''}`;
+    label.style.cssText = `font-size:var(--fs-xs); ${isCurrent ? 'color:var(--win-title); font-weight:bold;' : ''}`;
     label.textContent = `${weekNum}주`;
 
     col.appendChild(pct);
@@ -465,14 +465,20 @@ function renderYearlyAnimals() {
     }
 
     const cell = document.createElement('div');
-    cell.style.cssText = `text-align:center; ${isCurrent ? 'outline:2px solid #A855F7;' : ''}`;
+    cell.style.cssText = `text-align:center; ${isCurrent ? 'outline:2px solid var(--win-title);' : ''}`;
 
-    cell.innerHTML = renderAnimalSVG(animalKey, stage, 48);
+    const svgWrap = document.createElement('div');
+    svgWrap.innerHTML = renderAnimalSVG(animalKey, stage, 48); // 내부 생성 SVG
+    cell.appendChild(svgWrap);
 
     const lbl = document.createElement('div');
-    lbl.style.cssText = 'font-size:8px; margin-top:2px;';
+    lbl.style.cssText = 'font-size:var(--fs-xs); margin-top:2px;';
     lbl.textContent = `${m}월`;
     cell.appendChild(lbl);
+
+    cell.style.cursor = 'pointer';
+    cell.title = `${m}월 상세 보기`;
+    cell.addEventListener('click', () => openMonthModal(curYear, m));
 
     grid.appendChild(cell);
   }
@@ -494,14 +500,14 @@ function renderAnimalPanel(rate) {
 
   canvas.innerHTML = renderAnimalSVG(animalKey, stage);
   nameEl.textContent = ANIMAL_NAMES[animalKey] ?? animalKey;
-  stageEl.textContent = `달성률 ${rate}% · ${STAGE_LABELS[stage]}`;
+  stageEl.textContent = `달성률 ${rate}%`;
 
   // 4단계 프리뷰 스팟
   while (stagesEl.firstChild) stagesEl.removeChild(stagesEl.firstChild);
   for (let s = 1; s <= 4; s++) {
     const wrap = document.createElement('div');
-    wrap.style.cssText = `opacity:${stage >= s ? 1 : 0.3}; cursor:pointer; border:${stage === s ? '2px solid #A855F7' : '2px solid transparent'};`;
-    wrap.title = STAGE_LABELS[s];
+    wrap.style.cssText = `opacity:${stage >= s ? 1 : 0.3}; cursor:pointer; border:${stage === s ? '2px solid var(--win-title)' : '2px solid transparent'};`;
+    wrap.title = `stage ${s}`;
     wrap.innerHTML = renderAnimalSVG(animalKey, s, 40);
     // 이전 SVG 크기 조절 코드 제거됨 (sizePx 파라미터로 처리)
     // SVG 크기 줄이기
@@ -509,9 +515,172 @@ function renderAnimalPanel(rate) {
   }
 }
 
+// ── 월별 상세 팝업 ────────────────────────────────────
+function openMonthModal(year, month) {
+  const animalKey = MONTH_ANIMAL[month];
+  const isFuture = month > new Date().getMonth() + 1;
+  const rate = isFuture ? 0 : calcMonthRate(year, month);
+  const stage = isFuture ? 1 : rateToStage(rate);
+  const weeks = getMonthWeeks(year, month);
+
+  const backdrop = document.createElement('div');
+  backdrop.className = 'modal-backdrop';
+
+  const win = document.createElement('div');
+  win.className = 'modal-window window';
+
+  // 타이틀바
+  const titlebar = document.createElement('div');
+  titlebar.className = 'window-titlebar';
+  const titleSpan = document.createElement('span');
+  titleSpan.className = 'title';
+  titleSpan.textContent = `${month}월 달성 현황`;
+  const controls = document.createElement('div');
+  controls.className = 'window-controls';
+  const xBtn = document.createElement('button');
+  xBtn.className = 'window-btn';
+  xBtn.title = '닫기';
+  xBtn.textContent = '✕';
+  controls.appendChild(xBtn);
+  titlebar.appendChild(titleSpan);
+  titlebar.appendChild(controls);
+
+  // 본문
+  const body = document.createElement('div');
+  body.className = 'modal-body';
+
+  // 동물 + 요약
+  const summary = document.createElement('div');
+  summary.style.cssText = 'display:flex; align-items:center; gap:12px;';
+  const svgWrap = document.createElement('div');
+  svgWrap.innerHTML = renderAnimalSVG(animalKey, stage, 64); // 내부 생성 SVG
+  summary.appendChild(svgWrap);
+
+  const info = document.createElement('div');
+  info.style.cssText = 'display:flex; flex-direction:column; gap:4px;';
+  const nameDiv = document.createElement('div');
+  nameDiv.style.cssText = "font-family:'Press Start 2P',monospace; font-size:var(--fs-xs);";
+  nameDiv.textContent = ANIMAL_NAMES[animalKey] ?? animalKey;
+  const rateDiv = document.createElement('div');
+  rateDiv.style.cssText = 'font-size:var(--fs-sm);';
+  rateDiv.textContent = isFuture ? '아직 시작 전' : `월간 달성률 ${rate}%`;
+  info.appendChild(nameDiv);
+  info.appendChild(rateDiv);
+  summary.appendChild(info);
+  body.appendChild(summary);
+
+  // 습관별 달성 / 미달성
+  if (!isFuture && habits.length) {
+    const achieved = [];
+    const missed = [];
+
+    habits.forEach(habit => {
+      // 해당 월 전체 주에서 목표 달성 여부 집계
+      let metCount = 0;
+      weeks.forEach(({ start, end }) => {
+        const dates = [];
+        const d = new Date(start);
+        while (d <= end) { dates.push(new Date(d)); d.setDate(d.getDate() + 1); }
+        const refDate = formatDate(dates[dates.length - 1]);
+        const { target, criteria } = getTargetAt(habit, refDate);
+        const checks = dates.reduce((s, dd) => s + (getLog(formatDate(dd))[habit.id] ? 1 : 0), 0);
+        const met = criteria === '이하' ? checks <= target : checks >= target;
+        if (met) metCount++;
+      });
+      if (metCount === weeks.length) achieved.push(habit.name);
+      else missed.push(habit.name);
+    });
+
+    const divider = document.createElement('div');
+    divider.style.cssText = 'border-top:1px solid var(--win-dark); margin-top:4px;';
+    body.appendChild(divider);
+
+    const addGroup = (icon, label, names) => {
+      const wrap = document.createElement('div');
+      wrap.style.cssText = 'display:flex; flex-direction:column; gap:3px;';
+      const title = document.createElement('div');
+      title.style.cssText = 'font-size:var(--fs-xs); color:var(--win-darker); margin-top:4px;';
+      title.textContent = `${icon} ${label} (${names.length})`;
+      wrap.appendChild(title);
+      names.forEach(name => {
+        const item = document.createElement('div');
+        item.style.cssText = 'font-size:var(--fs-sm); padding-left:8px;';
+        item.textContent = name;
+        wrap.appendChild(item);
+      });
+      body.appendChild(wrap);
+    };
+
+    if (achieved.length) addGroup('✔', '달성한 습관', achieved);
+    if (missed.length)   addGroup('·', '달성 못한 습관', missed);
+  }
+
+  // 푸터
+  const footer = document.createElement('div');
+  footer.className = 'modal-footer';
+  const closeBtn = document.createElement('button');
+  closeBtn.className = 'btn';
+  closeBtn.textContent = '확인';
+  closeBtn.style.minWidth = '60px';
+  footer.appendChild(closeBtn);
+
+  win.appendChild(titlebar);
+  win.appendChild(body);
+  win.appendChild(footer);
+  backdrop.appendChild(win);
+  document.body.appendChild(backdrop);
+
+  const close = () => document.body.removeChild(backdrop);
+  closeBtn.addEventListener('click', close);
+  xBtn.addEventListener('click', close);
+  backdrop.addEventListener('click', e => { if (e.target === backdrop) close(); });
+}
+
+// ── JSON 백업 / 불러오기 ──────────────────────────────
+function exportData() {
+  const data = loadData();
+  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `habit-backup-${formatDate(new Date())}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json,application/json';
+  input.addEventListener('change', () => {
+    const file = input.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = e => {
+      try {
+        const parsed = JSON.parse(e.target.result);
+        if (!Array.isArray(parsed.habits) || typeof parsed.logs !== 'object') {
+          throw new Error('형식 오류');
+        }
+        saveData(parsed);
+        habits = getHabits();
+        renderTable();
+        updateStatusBar();
+        alert('불러오기 완료!');
+      } catch {
+        alert('올바른 백업 파일이 아닙니다.');
+      }
+    };
+    reader.readAsText(file);
+  });
+  input.click();
+}
+
 // ── 초기화 ────────────────────────────────────────────
 function init() {
   document.getElementById('btn-add-habit').addEventListener('click', addHabit);
+  document.getElementById('btn-export').addEventListener('click', exportData);
+  document.getElementById('btn-import').addEventListener('click', importData);
   renderDateHeaders();
   renderTitleDate();
   renderTable();

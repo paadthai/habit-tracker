@@ -12,7 +12,6 @@
   <link rel="manifest" href="manifest.json" />
   <title>🐇 Habit Tracker</title>
   <link rel="stylesheet" href="css/win95.css" />
-  <link rel="stylesheet" href="css/newjeans-theme.css" />
 </head>
 <body>
 
@@ -29,17 +28,20 @@
       </div>
     </div>
 
-    <!-- 메뉴바 (향후 확장) -->
-    <div style="background: var(--win-bg); border-bottom: 1px solid var(--win-dark); padding: 2px 6px; font-size: 11px;">
+    <!-- 메뉴바 -->
+    <div style="background: var(--win-bg); border-bottom: 1px solid var(--win-dark); padding: 2px 6px; font-size: var(--fs-base); display:flex; gap:4px; align-items:center;">
       <span style="padding: 2px 8px; cursor: default;">파일(F)</span>
       <span style="padding: 2px 8px; cursor: default;">보기(V)</span>
       <span style="padding: 2px 8px; cursor: default;">도움말(H)</span>
+      <span style="flex:1;"></span>
+      <button class="btn btn-small" id="btn-export" title="데이터 백업 (JSON)">💾</button>
+      <button class="btn btn-small" id="btn-import" title="백업 불러오기 (JSON)">📂</button>
     </div>
 
     <div class="window-content">
 
       <!-- 주간 날짜 표시 -->
-      <div style="margin-bottom: 6px; font-size: 10px; color: var(--win-darker);">
+      <div style="margin-bottom: 6px; font-size: var(--fs-sm); color: var(--win-darker);">
         📅 <span id="title-week-range"></span>
       </div>
 
@@ -81,13 +83,13 @@
       <!-- 대시보드 윈도우 -->
       <div class="window">
         <div class="window-titlebar">
-          <span class="title" style="font-size:7px;">📊 이번 주 달성 현황</span>
+          <span class="title" style="font-size:var(--fs-xs);">📊 이번 주 달성 현황</span>
         </div>
         <div class="window-content" style="padding:8px;">
           <div id="dashboard-list" style="display:flex; flex-direction:column; gap:6px;">
             <!-- JS로 렌더됨 -->
           </div>
-          <div id="dashboard-empty" style="color:var(--win-darker); font-size:10px; display:none;">
+          <div id="dashboard-empty" style="color:var(--win-darker); font-size:var(--fs-sm); display:none;">
             습관을 추가하면 달성률이 여기 표시됩니다.
           </div>
         </div>
@@ -99,7 +101,7 @@
         <!-- 섹션 1: 주간 달성 현황 -->
         <div class="window" style="flex:1; min-width:0; display:flex; flex-direction:column;">
           <div class="window-titlebar">
-            <span class="title" style="font-size:7px;">📅 주간 달성 현황</span>
+            <span class="title" style="font-size:var(--fs-xs);">📅 주간 달성 현황</span>
           </div>
           <div class="window-content" style="padding:8px; flex:1; display:flex; flex-direction:column; box-sizing:border-box;">
             <div id="monthly-weeks-panel" style="flex:1; display:flex; flex-direction:column;"></div>
@@ -109,12 +111,12 @@
         <!-- 섹션 2: 이번달의 동물 -->
         <div class="window" style="flex:1; min-width:0;">
           <div class="window-titlebar">
-            <span class="title" style="font-size:7px;">🌟 이번 달의 동물</span>
+            <span class="title" style="font-size:var(--fs-xs);">🌟 이번 달의 동물</span>
           </div>
           <div class="window-content" style="padding:8px; display:flex; flex-direction:column; align-items:center; gap:6px;">
             <div id="animal-canvas"></div>
-            <div id="animal-name" style="font-family:'Press Start 2P',monospace; font-size:8px; text-align:center;"></div>
-            <div id="animal-stage-label" style="font-size:8px; text-align:center;"></div>
+            <div id="animal-name" style="font-family:'Press Start 2P',monospace; font-size:var(--fs-xs); text-align:center;"></div>
+            <div id="animal-stage-label" style="font-size:var(--fs-sm); text-align:center;"></div>
             <div style="display:flex; gap:3px; flex-wrap:wrap; justify-content:center;" id="animal-stages"></div>
           </div>
         </div>
@@ -122,7 +124,7 @@
         <!-- 섹션 3: 월별 달성현황 -->
         <div class="window" style="flex:1; min-width:0;">
           <div class="window-titlebar">
-            <span class="title" style="font-size:7px;">🗓️ 월별 달성현황</span>
+            <span class="title" style="font-size:var(--fs-xs);">🗓️ 월별 달성현황</span>
           </div>
           <div class="window-content" style="padding:8px;">
             <div id="yearly-animals-panel"></div>
