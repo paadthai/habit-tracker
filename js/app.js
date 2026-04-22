@@ -360,17 +360,28 @@ function getMonthWeeks(year, month) {
 }
 
 // 날짜 배열로 달성률 계산
-function calcRateForDates(dates) {
-  if (!habits.length) return 0;
+function calcRateForDates(dates, allowEmpty = false) {
+  if (!habits.length) return allowEmpty ? null : 0;
+  const today = formatDate(new Date());
+  // 날짜 범위에 오늘 이전 데이터가 하나도 없으면 null (미래/데이터없음)
+  const pastDates = dates.filter(d => formatDate(d) <= today);
+  if (!allowEmpty && pastDates.length === 0) return 0;
+
   let total = 0;
+  let counted = 0;
   habits.forEach(habit => {
     const refDate = formatDate(dates[dates.length - 1]);
     const { target, criteria } = getTargetAt(habit, refDate);
-    const checks = dates.reduce((s, d) => s + (getLog(formatDate(d))[habit.id] ? 1 : 0), 0);
+    const checks = pastDates.reduce((s, d) => s + (getLog(formatDate(d))[habit.id] ? 1 : 0), 0);
+    // 이하 기준: 체크가 하나도 없고 과거 주라면 달성으로 보지 않음 (데이터 없음 처리)
+    const hasAnyLog = pastDates.some(d => Object.keys(getLog(formatDate(d))).length > 0);
+    if (criteria === '이하' && !hasAnyLog) return;
     if (criteria === '이하') total += checks <= target ? 1 : target / checks;
     else total += Math.min(checks / target, 1);
+    counted++;
   });
-  return Math.round((total / habits.length) * 100);
+  if (counted === 0) return allowEmpty ? null : 0;
+  return Math.round((total / counted) * 100);
 }
 
 // 해당 월 전체 달성률
@@ -399,35 +410,37 @@ function renderMonthlyWeeks() {
   const weeks = getMonthWeeks(year, month);
   const currentWeekMon = formatDate(weekDates[0]);
 
-  // 세로 바 컨테이너 (바들을 가로로 나열, 높이 채움)
+  const BAR_HEIGHT = 80; // px 고정 높이
+
   const container = document.createElement('div');
-  container.style.cssText = 'display:flex; gap:4px; align-items:flex-end; flex:1;';
+  container.style.cssText = 'display:flex; gap:4px; align-items:flex-end;';
 
   weeks.forEach(({ weekNum, start, end }) => {
     const dates = [];
     const d = new Date(start);
     while (d <= end) { dates.push(new Date(d)); d.setDate(d.getDate() + 1); }
-    const rate = calcRateForDates(dates);
+    const rate = calcRateForDates(dates) ?? 0;
     const isCurrent = formatDate(start) === currentWeekMon;
     const isFuture = start > now;
 
     const col = document.createElement('div');
-    col.style.cssText = 'flex:1; height:100%; display:flex; flex-direction:column; align-items:center; gap:3px;';
+    col.style.cssText = 'flex:1; display:flex; flex-direction:column; align-items:center; gap:3px;';
 
     const pct = document.createElement('span');
-    pct.style.cssText = `font-size:var(--fs-xs); ${isCurrent ? 'color:var(--win-title); font-weight:bold;' : 'color:#555;'}`;
+    pct.style.cssText = `font-size:var(--fs-xs); ${isCurrent ? 'color:var(--win-title);font-weight:bold;' : 'color:#555;'}`;
     pct.textContent = isFuture ? '-' : `${rate}%`;
 
     const barWrap = document.createElement('div');
-    barWrap.style.cssText = 'width:100%; flex:1; min-height:0; box-shadow:inset 1px 1px #808080, inset -1px -1px #fff; background:white; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden;';
+    barWrap.style.cssText = `width:100%; height:${BAR_HEIGHT}px; box-shadow:inset 1px 1px #808080, inset -1px -1px #fff; background:white; display:flex; flex-direction:column; justify-content:flex-end; overflow:hidden;`;
 
     const fill = document.createElement('div');
     const fillColor = isFuture ? 'transparent' : rate >= 100 ? '#008080' : isCurrent ? 'var(--win-title)' : '#000080';
-    fill.style.cssText = `width:100%; height:${isFuture ? 0 : rate}%; background:${fillColor}; transition:height 0.4s;`;
+    const fillH = isFuture ? 0 : rate;
+    fill.style.cssText = `width:100%; height:${fillH}%; background:${fillColor}; transition:height 0.4s;`;
     barWrap.appendChild(fill);
 
     const label = document.createElement('span');
-    label.style.cssText = `font-size:var(--fs-xs); ${isCurrent ? 'color:var(--win-title); font-weight:bold;' : ''}`;
+    label.style.cssText = `font-size:var(--fs-xs); ${isCurrent ? 'color:var(--win-title);font-weight:bold;' : ''}`;
     label.textContent = `${weekNum}주`;
 
     col.appendChild(pct);
